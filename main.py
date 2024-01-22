@@ -11,11 +11,13 @@ from core.handlers.basic import get_start, get_photo, get_location, get_inline
 from core.handlers.contact import get_true_contact, get_fake_contact
 from core.handlers.callback import select_macbook
 from core.handlers.pay import order, pre_checkout_query, successful_payment, shipping_check
+from core.handlers import form
 
 from core.filters.iscontact import IsTrueContact
 
 from core.utils.commands import set_commands
 from core.utils.callbackdata import MacInfo
+from core.utils.statesform import StepsForm
 
 from core.middlewares.countermiddleware import CounterMiddleware
 from core.middlewares.officehours import OfficeHoursMiddleware
@@ -67,6 +69,10 @@ async def start():
     dp.pre_checkout_query.register(pre_checkout_query)
     dp.message.register(successful_payment, F.successful_payment)
     dp.shipping_query.register(shipping_check)
+    dp.message.register(form.get_form, Command(commands='form'))
+    dp.message.register(form.get_name, StepsForm.GET_NAME)
+    dp.message.register(form.get_last_name, StepsForm.GET_LAST_NAME)
+    dp.message.register(form.get_age, StepsForm.GET_AGE)
 
     try:
         await dp.start_polling(bot)
