@@ -9,7 +9,7 @@ from aiogram.filters import Command, CommandStart
 from core.handlers.basic import get_start, get_photo, get_location, get_inline
 from core.handlers.contact import get_true_contact, get_fake_contact
 from core.handlers.callback import select_macbook
-from core.handlers.pay import order, pre_checkout_query, successful_payment
+from core.handlers.pay import order, pre_checkout_query, successful_payment, shipping_check
 from core.filters.iscontact import IsTrueContact
 from core.utils.commands import set_commands
 from core.utils.callbackdata import MacInfo
@@ -47,6 +47,7 @@ async def start():
     dp.message.register(order, Command(commands='pay'))
     dp.pre_checkout_query.register(pre_checkout_query)
     dp.message.register(successful_payment, F.successful_payment)
+    dp.shipping_query.register(shipping_check)
 
     try:
         await dp.start_polling(bot)
