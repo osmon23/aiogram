@@ -2,6 +2,7 @@ import sys
 import asyncio
 import logging
 
+import asyncpg
 from decouple import config
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, CommandStart
@@ -10,9 +11,15 @@ from core.handlers.basic import get_start, get_photo, get_location, get_inline
 from core.handlers.contact import get_true_contact, get_fake_contact
 from core.handlers.callback import select_macbook
 from core.handlers.pay import order, pre_checkout_query, successful_payment, shipping_check
+
 from core.filters.iscontact import IsTrueContact
+
 from core.utils.commands import set_commands
 from core.utils.callbackdata import MacInfo
+
+from core.middlewares.countermiddleware import CounterMiddleware
+from core.middlewares.officehours import OfficeHoursMiddleware
+from core.middlewares.dbmiddleware import DbSession
 
 token = config('BOT_TOKEN')
 admin_id = config('ADMIN_ID')
@@ -27,12 +34,24 @@ async def stop_bot(bot: Bot):
     await bot.send_message(admin_id, text='Бот остановлен!')
 
 
+async def create_pool():
+    return await asyncpg.create_pool(user='postgres', password='postgres', database='users',
+                                     host='127.0.0.1', port=5432, command_timeout=60)
+
+
 async def start():
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
     bot = Bot(token=token, parse_mode='HTML')
 
+    pool_connect = await create_pool()
+
     dp = Dispatcher()
+
+    dp.update.middleware.register(DbSession(pool_connect))
+    dp.message.middleware.register(CounterMiddleware())
+    dp.message.middleware.register(OfficeHoursMiddleware())
+
     dp.startup.register(start_bot)
     dp.shutdown.register(stop_bot)
 
