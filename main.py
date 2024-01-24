@@ -1,9 +1,11 @@
 import sys
 import asyncio
 import logging
+from datetime import datetime, timedelta
 
 import asyncpg
 from decouple import config
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, CommandStart
 
@@ -12,6 +14,7 @@ from core.handlers.contact import get_true_contact, get_fake_contact
 from core.handlers.callback import select_macbook
 from core.handlers.pay import order, pre_checkout_query, successful_payment, shipping_check
 from core.handlers import form
+from core.handlers import apsched
 
 from core.filters.iscontact import IsTrueContact
 
@@ -22,6 +25,7 @@ from core.utils.statesform import StepsForm
 from core.middlewares.countermiddleware import CounterMiddleware
 from core.middlewares.officehours import OfficeHoursMiddleware
 from core.middlewares.dbmiddleware import DbSession
+from core.middlewares.apschedulermiddleware import SchedulerMiddleware
 
 token = config('BOT_TOKEN')
 admin_id = config('ADMIN_ID')
@@ -47,10 +51,18 @@ async def start():
     bot = Bot(token=token, parse_mode='HTML')
 
     pool_connect = await create_pool()
+    scheduler = AsyncIOScheduler(timezone='Asia/Bishkek')
+    scheduler.add_job(apsched.send_message_time, trigger='date', run_date=datetime.now() + timedelta(seconds=10),
+                      kwargs={'bot': bot})
+    scheduler.add_job(apsched.send_message_cron, trigger='cron', hour=datetime.now().hour,
+                      minute=datetime.now().minute + 1, start_date=datetime.now(), kwargs={'bot': bot})
+    scheduler.add_job(apsched.send_message_interval, trigger='interval', seconds=60, kwargs={'bot': bot})
+    scheduler.start()
 
     dp = Dispatcher()
 
     dp.update.middleware.register(DbSession(pool_connect))
+    dp.update.middleware.register(SchedulerMiddleware(scheduler))
     dp.message.middleware.register(CounterMiddleware())
     dp.message.middleware.register(OfficeHoursMiddleware())
 
