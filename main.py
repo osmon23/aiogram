@@ -6,8 +6,11 @@ from datetime import datetime, timedelta
 import asyncpg
 from decouple import config
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.jobstores.redis import RedisJobStore
+from apscheduler_di import ContextSchedulerDecorator
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, CommandStart
+from aiogram.fsm.storage.redis import RedisStorage
 
 from core.handlers.basic import get_start, get_photo, get_location, get_inline
 from core.handlers.contact import get_true_contact, get_fake_contact
@@ -51,15 +54,25 @@ async def start():
     bot = Bot(token=token, parse_mode='HTML')
 
     pool_connect = await create_pool()
-    scheduler = AsyncIOScheduler(timezone='Asia/Bishkek')
-    scheduler.add_job(apsched.send_message_time, trigger='date', run_date=datetime.now() + timedelta(seconds=10),
-                      kwargs={'bot': bot})
-    scheduler.add_job(apsched.send_message_cron, trigger='cron', hour=datetime.now().hour,
-                      minute=datetime.now().minute + 1, start_date=datetime.now(), kwargs={'bot': bot})
-    scheduler.add_job(apsched.send_message_interval, trigger='interval', seconds=60, kwargs={'bot': bot})
+
+    storage = RedisStorage.from_url('redis://localhost:6379/0')
+    jobstores = {
+        'default': RedisJobStore(jobs_key='dispatched_trips_jobs',
+                                 run_times_key='dispatched_trips_running',
+                                 host='localhost',
+                                 db=2,
+                                 port=6379)
+    }
+
+    scheduler = ContextSchedulerDecorator(AsyncIOScheduler(timezone='Asia/Bishkek', jobstores=jobstores))
+    scheduler.ctx.add_instance(bot, declared_class=Bot)
+    # scheduler.add_job(apsched.send_message_time, trigger='date', run_date=datetime.now() + timedelta(seconds=10))
+    # scheduler.add_job(apsched.send_message_cron, trigger='cron', hour=datetime.now().hour,
+    #                   minute=datetime.now().minute + 1, start_date=datetime.now())
+    # scheduler.add_job(apsched.send_message_interval, trigger='interval', seconds=60)
     scheduler.start()
 
-    dp = Dispatcher()
+    dp = Dispatcher(storage=storage)
 
     dp.update.middleware.register(DbSession(pool_connect))
     dp.update.middleware.register(SchedulerMiddleware(scheduler))
