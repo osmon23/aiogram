@@ -34,18 +34,15 @@ async def get_sticker(message: Message, bot: Bot):
 
 
 async def get_video(message: Message, bot: Bot):
-    async with ChatActionSender.upload_video(chat_id=message.chat.id, bot=bot):
-        video = FSInputFile(path=r'/home/osmon/Videos/Screencasts/Screencast from 11.01.2024 03:00:56.webm')
-        await bot.send_video(message.chat.id, video=video, caption='It\'s video')
+    video = FSInputFile(path=r'/home/osmon/Videos/Screencasts/Screencast from 11.01.2024 03:00:56.webm')
+    await bot.send_video(message.chat.id, video=video, caption='It\'s video')
 
 
 async def get_video_note(message: Message, bot: Bot):
-    async with ChatActionSender.upload_video_note(chat_id=message.chat.id, bot=bot):
-        video_note = FSInputFile(path=r'/home/osmon/Videos/Screencasts/Screencast from 11.01.2024 03:00:56.webm')
-        await bot.send_video_note(message.chat.id, video_note=video_note)
+    video_note = FSInputFile(path=r'/home/osmon/Videos/Screencasts/Screencast from 11.01.2024 03:00:56.webm')
+    await bot.send_video_note(message.chat.id, video_note=video_note)
 
 
 async def get_voice(message: Message, bot: Bot):
-    async with ChatActionSender.record_voice(chat_id=message.chat.id, bot=bot):
-        voice = FSInputFile(path=r'/home/osmon/Downloads/Telegram Desktop/REDZED - RAVE IN THE GRAVE')
-        await bot.send_voice(message.chat.id, voice=voice)
+    voice = FSInputFile(path=r'/home/osmon/Downloads/Telegram Desktop/REDZED - RAVE IN THE GRAVE')
+    await bot.send_voice(message.chat.id, voice=voice)

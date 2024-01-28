@@ -11,6 +11,7 @@ from apscheduler_di import ContextSchedulerDecorator
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.storage.redis import RedisStorage
+from aiogram.utils.chat_action import ChatActionMiddleware
 
 from core.handlers.basic import get_start, get_photo, get_location, get_inline
 from core.handlers.contact import get_true_contact, get_fake_contact
@@ -30,6 +31,7 @@ from core.middlewares.countermiddleware import CounterMiddleware
 from core.middlewares.officehours import OfficeHoursMiddleware
 from core.middlewares.dbmiddleware import DbSession
 from core.middlewares.apschedulermiddleware import SchedulerMiddleware
+from core.middlewares.example_chat_action_middleware import ExampleChatActionMiddleware
 
 token = config('BOT_TOKEN')
 admin_id = config('ADMIN_ID')
@@ -79,6 +81,7 @@ async def start():
     dp.update.middleware.register(SchedulerMiddleware(scheduler))
     dp.message.middleware.register(CounterMiddleware())
     dp.message.middleware.register(OfficeHoursMiddleware())
+    dp.message.middleware.register(ExampleChatActionMiddleware())  # ChatActionMiddleware()
 
     dp.startup.register(start_bot)
     dp.shutdown.register(stop_bot)
@@ -100,14 +103,14 @@ async def start():
     dp.message.register(form.get_last_name, StepsForm.GET_LAST_NAME)
     dp.message.register(form.get_age, StepsForm.GET_AGE)
 
-    dp.message.register(send_media.get_audio, Command(commands='audio'))
-    dp.message.register(send_media.get_document, Command(commands='document'))
-    dp.message.register(send_media.get_media_group, Command(commands='mediagroup'))
-    dp.message.register(send_media.get_photo, Command(commands='photo'))
-    dp.message.register(send_media.get_sticker, Command(commands='sticker'))
-    dp.message.register(send_media.get_video, Command(commands='video'))
-    dp.message.register(send_media.get_video_note, Command(commands='video_note'))
-    dp.message.register(send_media.get_voice, Command(commands='voice'))
+    dp.message.register(send_media.get_audio, Command(commands='audio'), flags={'chat_action': 'upload_document'})
+    dp.message.register(send_media.get_document, Command(commands='document'), flags={'chat_action': 'upload_document'})
+    dp.message.register(send_media.get_media_group, Command(commands='mediagroup'), flags={'chat_action': 'upload_photo'})
+    dp.message.register(send_media.get_photo, Command(commands='photo'), flags={'chat_action': 'upload_photo'})
+    dp.message.register(send_media.get_sticker, Command(commands='sticker'), flags={'chat_action': 'choose_sticker'})
+    dp.message.register(send_media.get_video, Command(commands='video'), flags={'chat_action': 'upload_video'})
+    dp.message.register(send_media.get_video_note, Command(commands='video_note'), flags={'chat_action': 'upload_video_note'})
+    dp.message.register(send_media.get_voice, Command(commands='voice'), flags={'chat_action': 'upload_voice'})
 
     # await bot.delete_webhook()
     try:
