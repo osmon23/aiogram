@@ -18,6 +18,7 @@ from core.handlers.callback import select_macbook
 from core.handlers.pay import order, pre_checkout_query, successful_payment, shipping_check
 from core.handlers import form
 from core.handlers import apsched
+from core.handlers import send_media
 
 from core.filters.iscontact import IsTrueContact
 
@@ -99,6 +100,16 @@ async def start():
     dp.message.register(form.get_last_name, StepsForm.GET_LAST_NAME)
     dp.message.register(form.get_age, StepsForm.GET_AGE)
 
+    dp.message.register(send_media.get_audio, Command(commands='audio'))
+    dp.message.register(send_media.get_document, Command(commands='document'))
+    dp.message.register(send_media.get_media_group, Command(commands='mediagroup'))
+    dp.message.register(send_media.get_photo, Command(commands='photo'))
+    dp.message.register(send_media.get_sticker, Command(commands='sticker'))
+    dp.message.register(send_media.get_video, Command(commands='video'))
+    dp.message.register(send_media.get_video_note, Command(commands='video_note'))
+    dp.message.register(send_media.get_voice, Command(commands='voice'))
+
+    # await bot.delete_webhook()
     try:
         await dp.start_polling(bot)
     finally:
