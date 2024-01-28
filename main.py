@@ -1,6 +1,7 @@
 import sys
 import asyncio
 import logging
+import contextlib
 from datetime import datetime, timedelta
 
 import asyncpg
@@ -120,7 +121,9 @@ async def start():
         await dp.start_polling(bot)
     finally:
         await bot.session.close()
+        await dp.storage.close()
 
 
 if __name__ == '__main__':
-    asyncio.run(start())
+    with contextlib.suppress(KeyboardInterrupt, SystemExit):
+        asyncio.run(start())
