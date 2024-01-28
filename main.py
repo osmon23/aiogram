@@ -32,6 +32,7 @@ from core.middlewares.officehours import OfficeHoursMiddleware
 from core.middlewares.dbmiddleware import DbSession
 from core.middlewares.apschedulermiddleware import SchedulerMiddleware
 from core.middlewares.example_chat_action_middleware import ExampleChatActionMiddleware
+from core.middlewares.throttlingmiddleware import ThrottlingMiddleware
 
 token = config('BOT_TOKEN')
 admin_id = config('ADMIN_ID')
@@ -59,6 +60,7 @@ async def start():
     pool_connect = await create_pool()
 
     storage = RedisStorage.from_url('redis://localhost:6379/0')
+    storage_throttling = RedisStorage.from_url('redis://localhost:6379/5')
     jobstores = {
         'default': RedisJobStore(jobs_key='dispatched_trips_jobs',
                                  run_times_key='dispatched_trips_running',
@@ -82,6 +84,7 @@ async def start():
     dp.message.middleware.register(CounterMiddleware())
     dp.message.middleware.register(OfficeHoursMiddleware())
     dp.message.middleware.register(ExampleChatActionMiddleware())  # ChatActionMiddleware()
+    dp.message.middleware.register(ThrottlingMiddleware(storage=storage_throttling))
 
     dp.startup.register(start_bot)
     dp.shutdown.register(stop_bot)
